@@ -1,21 +1,10 @@
 """
-server.py — MoMo SMS REST API
-Plain Python http.server implementation.
+server.py  MoMo SMS REST API
 
-Endpoints:
-  GET    /transactions          List all transactions (paginated)
-  GET    /transactions/{id}     Get single transaction
-  POST   /transactions          Create new transaction
-  PUT    /transactions/{id}     Update existing transaction
-  DELETE /transactions/{id}     Delete a transaction
-  GET    /transactions/search?q=...  Search by party/type/id
-  GET    /dsa/benchmark         Run DSA benchmark and return results
-
-Authentication: HTTP Basic Auth
+Authentication: 
   Username: admin
   Password: momo2024
 
-Run: python server.py [port]   (default port 8080)
 """
 
 import base64
@@ -29,11 +18,9 @@ from urllib.parse import urlparse, parse_qs
 from parser import parse_xml
 from dsa import build_index, linear_search, dict_lookup, benchmark
 
-# ──────────────────────────────────────────────
-# In-memory data store (loaded once at startup)
-# ──────────────────────────────────────────────
 
-XML_FILE = "modified_sms_v2.xml"
+
+XML_FILE = "modified_sms_v2.xml"  # place this file in same folder
 _transactions: list[dict] = parse_xml(XML_FILE)
 _index: dict[int, dict] = build_index(_transactions)
 _next_id: int = max((t["id"] for t in _transactions), default=0) + 1
@@ -43,10 +30,6 @@ def _refresh_index():
     global _index
     _index = build_index(_transactions)
 
-
-# ──────────────────────────────────────────────
-# Credentials (hardcoded for demo — use env vars / hashed in production)
-# ──────────────────────────────────────────────
 
 VALID_CREDENTIALS = {
     "admin": "momo2024",
@@ -65,10 +48,6 @@ def _check_auth(handler) -> bool:
     except Exception:
         return False
 
-
-# ──────────────────────────────────────────────
-# Helpers
-# ──────────────────────────────────────────────
 
 def _send_json(handler, status: int, payload):
     body = json.dumps(payload, indent=2).encode("utf-8")
@@ -94,17 +73,13 @@ def _parse_id(segment: str) -> int | None:
         return None
 
 
-# ──────────────────────────────────────────────
-# Request Handler
-# ──────────────────────────────────────────────
-
 class MoMoHandler(BaseHTTPRequestHandler):
 
     def log_message(self, format, *args):
         """Override to add timestamp to logs."""
         print(f"[{time.strftime('%H:%M:%S')}] {self.address_string()} - {format % args}")
 
-    # ── Auth gate ──────────────────────────────
+    
 
     def _require_auth(self) -> bool:
         """Returns True if authenticated, otherwise sends 401 and returns False."""
@@ -112,8 +87,6 @@ class MoMoHandler(BaseHTTPRequestHandler):
             return True
         _send_401(self)
         return False
-
-    # ── GET ────────────────────────────────────
 
     def do_GET(self):
         if not self._require_auth():
@@ -144,7 +117,7 @@ class MoMoHandler(BaseHTTPRequestHandler):
             })
             return
 
-        # GET /transactions/search?q=…
+        #searching for transactions
         if path == "/transactions/search":
             q = params.get("q", [""])[0].lower()
             results = [
@@ -157,7 +130,6 @@ class MoMoHandler(BaseHTTPRequestHandler):
             _send_json(self, 200, {"query": q, "results": results, "count": len(results)})
             return
 
-        # GET /dsa/benchmark
         if path == "/dsa/benchmark":
             results = benchmark(_transactions, iterations=50_000)
             results["note"] = (
@@ -168,7 +140,6 @@ class MoMoHandler(BaseHTTPRequestHandler):
             _send_json(self, 200, results)
             return
 
-        # GET /transactions/{id}
         m = re.fullmatch(r"/transactions/(\d+)", path)
         if m:
             tid = int(m.group(1))
@@ -181,7 +152,6 @@ class MoMoHandler(BaseHTTPRequestHandler):
 
         _send_json(self, 404, {"error": "Endpoint not found."})
 
-    # ── POST ───────────────────────────────────
 
     def do_POST(self):
         if not self._require_auth():
@@ -201,7 +171,7 @@ class MoMoHandler(BaseHTTPRequestHandler):
             _send_json(self, 400, {"error": "Invalid JSON body."})
             return
 
-        # Validate required fields
+        
         required = ["amount", "transaction_type", "party"]
         missing = [f for f in required if f not in body]
         if missing:
@@ -227,8 +197,7 @@ class MoMoHandler(BaseHTTPRequestHandler):
         _refresh_index()
         _send_json(self, 201, new_txn)
 
-    # ── PUT ────────────────────────────────────
-
+   
     def do_PUT(self):
         if not self._require_auth():
             return
@@ -253,14 +222,15 @@ class MoMoHandler(BaseHTTPRequestHandler):
             _send_json(self, 400, {"error": "Invalid JSON body."})
             return
 
-        # Prevent id mutation
+        
+        
         updates.pop("id", None)
         txn.update(updates)
         _refresh_index()
         _send_json(self, 200, txn)
 
-    # ── DELETE ─────────────────────────────────
-
+    
+    
     def do_DELETE(self):
         if not self._require_auth():
             return
@@ -283,9 +253,7 @@ class MoMoHandler(BaseHTTPRequestHandler):
         _send_json(self, 200, {"message": f"Transaction {tid} deleted successfully."})
 
 
-# ──────────────────────────────────────────────
-# Entry point
-# ──────────────────────────────────────────────
+
 
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
