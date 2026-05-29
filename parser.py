@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 import re
 import json
 
-
+# takes SMS body and classsifies it into categories.
 def _detect_type(body: str) -> str:
     """Heuristic: classify transaction type from SMS body text."""
     body_lower = body.lower()
@@ -22,7 +22,7 @@ def _detect_type(body: str) -> str:
         return "outgoing"
     return "unknown"
 
-
+# Uses regex to find the first occurence of an amount.
 def _extract_amount(body: str) -> float:
     """Pull the first 'NNN RWF' amount from the message body."""
     match = re.search(r"([\d,]+)\s+RWF", body)
@@ -30,7 +30,7 @@ def _extract_amount(body: str) -> float:
         return float(match.group(1).replace(",", ""))
     return 0.0
 
-
+# Extracts fee amount from body, with 0 as a default when nothing is found,
 def _extract_fee(body: str) -> float:
     """Extract fee amount; default 0 if not found."""
     match = re.search(r"Fee:\s*([\d,]+)\s*RWF", body)
@@ -39,6 +39,7 @@ def _extract_fee(body: str) -> float:
     return 0.0
 
 
+# looks for a phrase such as "balance"  which is followed by a number and "RWF"
 def _extract_balance(body: str) -> float:
     """Extract 'new MoMo balance' figure."""
     match = re.search(r"balance is ([\d,]+)\s*RWF", body)
@@ -46,7 +47,7 @@ def _extract_balance(body: str) -> float:
         return float(match.group(1).replace(",", ""))
     return 0.0
 
-
+# tries to find who the transaction was with.
 def _extract_party(body: str) -> str:
     """Extract sender/receiver name and number (e.g. 'Alice (0788111001)')."""
     match = re.search(r"(?:from|to)\s+([A-Za-z]+\s*\([^)]+\))", body)
@@ -57,12 +58,12 @@ def _extract_party(body: str) -> str:
         return match.group(1).strip()
     return "N/A"
 
-
+# looks for a phrase such as "Transaction ID:" followed by an identifier.
 def _extract_transaction_id(body: str) -> str:
     match = re.search(r"Transaction ID:\s*(\S+)", body)
     return match.group(1) if match else "N/A"
 
-
+# Its the function that ties everything together
 def parse_xml(filepath: str) -> list[dict]:
     """
     Parse an SMS XML file and return a list of transaction dictionaries.
@@ -95,7 +96,7 @@ def parse_xml(filepath: str) -> list[dict]:
 
     return transactions
 
-
+# it calls the parse_xml function 
 if __name__ == "__main__":
     txns = parse_xml("modified_sms_v2.xml")
     print(f"Parsed {len(txns)} transactions.")

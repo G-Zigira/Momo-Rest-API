@@ -12,9 +12,7 @@ import time
 import random
 
 
-# ──────────────────────────────────────────────
-# 1. Linear Search
-# ──────────────────────────────────────────────
+
 
 def linear_search(transactions: list[dict], target_id: int) -> dict | None:
     """
@@ -28,9 +26,6 @@ def linear_search(transactions: list[dict], target_id: int) -> dict | None:
     return None
 
 
-# ──────────────────────────────────────────────
-# 2. Dictionary (Hash-map) Lookup
-# ──────────────────────────────────────────────
 
 def build_index(transactions: list[dict]) -> dict[int, dict]:
     """
@@ -49,9 +44,6 @@ def dict_lookup(index: dict[int, dict], target_id: int) -> dict | None:
     return index.get(target_id)
 
 
-# ──────────────────────────────────────────────
-# Benchmark
-# ──────────────────────────────────────────────
 
 def benchmark(transactions: list[dict], iterations: int = 10_000) -> dict:
     """
@@ -64,13 +56,12 @@ def benchmark(transactions: list[dict], iterations: int = 10_000) -> dict:
     ids = [txn["id"] for txn in transactions]
     index = build_index(transactions)
 
-    # --- Linear search timing ---
     t0 = time.perf_counter()
     for _ in range(iterations):
         linear_search(transactions, random.choice(ids))
     linear_time = time.perf_counter() - t0
 
-    # --- Dictionary lookup timing ---
+  
     t0 = time.perf_counter()
     for _ in range(iterations):
         dict_lookup(index, random.choice(ids))
@@ -109,7 +100,6 @@ if __name__ == "__main__":
     print(f"  Speedup          : {results['speedup_factor']}×  faster with dict")
     print("=" * 50)
 
-    # Verify correctness
     txn_linear = linear_search(txns, 10)
     idx = build_index(txns)
     txn_dict = dict_lookup(idx, 10)

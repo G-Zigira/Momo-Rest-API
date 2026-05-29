@@ -29,9 +29,6 @@ from urllib.parse import urlparse, parse_qs
 from parser import parse_xml
 from dsa import build_index, linear_search, dict_lookup, benchmark
 
-# ──────────────────────────────────────────────
-# In-memory data store (loaded once at startup)
-# ──────────────────────────────────────────────
 
 XML_FILE = "modified_sms_v2.xml"
 _transactions: list[dict] = parse_xml(XML_FILE)
@@ -42,11 +39,6 @@ _next_id: int = max((t["id"] for t in _transactions), default=0) + 1
 def _refresh_index():
     global _index
     _index = build_index(_transactions)
-
-
-# ──────────────────────────────────────────────
-# Credentials (hardcoded for demo — use env vars / hashed in production)
-# ──────────────────────────────────────────────
 
 VALID_CREDENTIALS = {
     "admin": "momo2024",
@@ -66,9 +58,7 @@ def _check_auth(handler) -> bool:
         return False
 
 
-# ──────────────────────────────────────────────
-# Helpers
-# ──────────────────────────────────────────────
+
 
 def _send_json(handler, status: int, payload):
     body = json.dumps(payload, indent=2).encode("utf-8")
@@ -94,17 +84,12 @@ def _parse_id(segment: str) -> int | None:
         return None
 
 
-# ──────────────────────────────────────────────
-# Request Handler
-# ──────────────────────────────────────────────
-
 class MoMoHandler(BaseHTTPRequestHandler):
 
     def log_message(self, format, *args):
         """Override to add timestamp to logs."""
         print(f"[{time.strftime('%H:%M:%S')}] {self.address_string()} - {format % args}")
 
-    # ── Auth gate ──────────────────────────────
 
     def _require_auth(self) -> bool:
         """Returns True if authenticated, otherwise sends 401 and returns False."""
@@ -113,7 +98,6 @@ class MoMoHandler(BaseHTTPRequestHandler):
         _send_401(self)
         return False
 
-    # ── GET ────────────────────────────────────
 
     def do_GET(self):
         if not self._require_auth():
@@ -123,7 +107,6 @@ class MoMoHandler(BaseHTTPRequestHandler):
         path = parsed.path.rstrip("/")
         params = parse_qs(parsed.query)
 
-        # GET /transactions
         if path == "/transactions":
             page = int(params.get("page", [1])[0])
             limit = int(params.get("limit", [20])[0])
@@ -144,7 +127,7 @@ class MoMoHandler(BaseHTTPRequestHandler):
             })
             return
 
-        # GET /transactions/search?q=…
+  
         if path == "/transactions/search":
             q = params.get("q", [""])[0].lower()
             results = [
@@ -157,7 +140,7 @@ class MoMoHandler(BaseHTTPRequestHandler):
             _send_json(self, 200, {"query": q, "results": results, "count": len(results)})
             return
 
-        # GET /dsa/benchmark
+
         if path == "/dsa/benchmark":
             results = benchmark(_transactions, iterations=50_000)
             results["note"] = (
@@ -168,7 +151,7 @@ class MoMoHandler(BaseHTTPRequestHandler):
             _send_json(self, 200, results)
             return
 
-        # GET /transactions/{id}
+
         m = re.fullmatch(r"/transactions/(\d+)", path)
         if m:
             tid = int(m.group(1))
@@ -181,7 +164,6 @@ class MoMoHandler(BaseHTTPRequestHandler):
 
         _send_json(self, 404, {"error": "Endpoint not found."})
 
-    # ── POST ───────────────────────────────────
 
     def do_POST(self):
         if not self._require_auth():
@@ -201,7 +183,7 @@ class MoMoHandler(BaseHTTPRequestHandler):
             _send_json(self, 400, {"error": "Invalid JSON body."})
             return
 
-        # Validate required fields
+
         required = ["amount", "transaction_type", "party"]
         missing = [f for f in required if f not in body]
         if missing:
@@ -227,7 +209,6 @@ class MoMoHandler(BaseHTTPRequestHandler):
         _refresh_index()
         _send_json(self, 201, new_txn)
 
-    # ── PUT ────────────────────────────────────
 
     def do_PUT(self):
         if not self._require_auth():
@@ -253,13 +234,11 @@ class MoMoHandler(BaseHTTPRequestHandler):
             _send_json(self, 400, {"error": "Invalid JSON body."})
             return
 
-        # Prevent id mutation
         updates.pop("id", None)
         txn.update(updates)
         _refresh_index()
         _send_json(self, 200, txn)
 
-    # ── DELETE ─────────────────────────────────
 
     def do_DELETE(self):
         if not self._require_auth():
@@ -283,9 +262,6 @@ class MoMoHandler(BaseHTTPRequestHandler):
         _send_json(self, 200, {"message": f"Transaction {tid} deleted successfully."})
 
 
-# ──────────────────────────────────────────────
-# Entry point
-# ──────────────────────────────────────────────
 
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
