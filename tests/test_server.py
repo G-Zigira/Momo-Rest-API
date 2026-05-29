@@ -23,3 +23,27 @@ def test_check_auth_invalid():
 def test_parse_id_with_string():
     result = _parse_id("123")
     assert result == 123, f"Expected 123, got {result}"
+
+def test_parse_id_with_non_string():
+    result = _parse_id(4345)
+    assert result == 4345, f"Expected 4345, got {result}"
+
+def test_parse_id_with_invalid_string():
+    result = _parse_id("xyz")
+    assert result is None, f"Expected None for invalid string, got {result}"
+
+def test_parse_id_with_none():
+    result = _parse_id(None)
+    assert result is None, f"Expected None for None input, got {result}"
+
+def test_parse_id_with_empty_string():
+    result = _parse_id("")
+    assert result is None, f"Expected None for empty string, got {result}" 
+
+def test_parse_id_with_float_string():
+    result = _parse_id("89.4648825")
+    assert result is None, f"Expected None for float string, got {result}"
+
+def  test_parse_id_with_valid_string():
+    result = _parse_id("456")
+    assert result == 456, f"Expected 456, got {result}"
