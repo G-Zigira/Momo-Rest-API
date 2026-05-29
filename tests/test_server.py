@@ -47,3 +47,4 @@ def test_parse_id_with_float_string():
 def  test_parse_id_with_valid_string():
     result = _parse_id("456")
     assert result == 456, f"Expected 456, got {result}"
+
