@@ -1,0 +1,18 @@
+Laura Keza -Authentication vs Authorization — 
+boolean check had to become a role-aware function
+Wrong status codes — 401 vs 403 distinction
+Hardcoded plain-text passwords — security risk, needs bcrypt + env vars
+No logout mechanism — Basic Auth caches credentials, JWT would fix this
+
+Ineza Henry Jay-z 
+1. we implemented two search methods (linear search and dictionary lookup) to compare their efficiency when finding a transaction by ID.
+2. Used benchmark to compare the search methods over a large data set.
+
+
+4. Reflection — answer these two questions the assignment asks:
+
+Why is dictionary lookup faster? -->> It uses a hash table, O(1) vs O(n)
+Suggest another data structure -->> binary search, O(logn) still better than linear O(n)
+5. One screenshot of the terminal output when dsa.py is run successfully including the correctness check at the bottom.
+"screenshot attached"
+![alt text](image.png)
