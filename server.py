@@ -87,7 +87,7 @@ class MoMoHandler(BaseHTTPRequestHandler):
         _send_401(self)
         return False
 
-# The main request handler methods (do_GET, do_POST, do_PUT, do_DELETE) will go here.
+# The main request handler methods
 
     def do_GET(self):
         if not self._require_auth():

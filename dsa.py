@@ -32,7 +32,7 @@ def benchmark(transactions: list[dict], iterations: int = 10_000) -> dict:
     ids = [txn["id"] for txn in transactions]
     index = build_index(transactions)
 
-# inear search timing
+# Linear search timing
     t0 = time.perf_counter()
     for _ in range(iterations):
         linear_search(transactions, random.choice(ids))

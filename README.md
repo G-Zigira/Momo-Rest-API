@@ -1,3 +1,11 @@
+Members 
+  Collins Gathungu
+  Guivera Zigira
+  Ineza Henry Jay-z
+  Denzel Ngabo
+  Laura Keza
+
+
 "# Momo-Rest-API" 
 # MoMo SMS Transaction API
 
