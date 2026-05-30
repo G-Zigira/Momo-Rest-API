@@ -1,67 +1,44 @@
-"""
-dsa.py — Data Structures & Algorithms for transaction search.
-
-Implements and benchmarks:
-  1. Linear Search  — O(n) scan through a list
-  2. Dictionary Lookup — O(1) average key access
-
-Run standalone to see benchmark results.
-"""
-
 import time
 import random
 
 
-
+# linear search
 
 def linear_search(transactions: list[dict], target_id: int) -> dict | None:
-    """
-    Scan every element from left to right until the id matches.
-    Time complexity : O(n)
-    Space complexity: O(1)
-    """
+    
     for txn in transactions:
         if txn["id"] == target_id:
             return txn
     return None
 
-
+# dictionary-based lookup
 
 def build_index(transactions: list[dict]) -> dict[int, dict]:
-    """
-    Build a hash-map from id → transaction dict.
-    Building cost : O(n)  (done once at startup)
-    """
+    
     return {txn["id"]: txn for txn in transactions}
 
 
 def dict_lookup(index: dict[int, dict], target_id: int) -> dict | None:
-    """
-    Direct key access in a Python dict (hash table).
-    Time complexity : O(1) average
-    Space complexity: O(n)
-    """
+    
     return index.get(target_id)
 
-
+# Benchmarking function to compare linear search vs dictionary lookup.
 
 def benchmark(transactions: list[dict], iterations: int = 10_000) -> dict:
-    """
-    Compare linear search vs dictionary lookup over `iterations` random lookups.
-    Returns a dict with timing results and analysis.
-    """
+    
     if not transactions:
         return {}
 
     ids = [txn["id"] for txn in transactions]
     index = build_index(transactions)
 
+# inear search timing
     t0 = time.perf_counter()
     for _ in range(iterations):
         linear_search(transactions, random.choice(ids))
     linear_time = time.perf_counter() - t0
 
-  
+# dictionary lookup timing
     t0 = time.perf_counter()
     for _ in range(iterations):
         dict_lookup(index, random.choice(ids))
@@ -79,7 +56,7 @@ def benchmark(transactions: list[dict], iterations: int = 10_000) -> dict:
         "speedup_factor": round(speedup, 1),
     }
 
-
+# extracts the party involved in the transaction, such as the sender or recipient. It looks for common patterns in the SMS body to identify the party name and any associated identifiers (like phone numbers or masked account numbers). If it cannot determine the party, it returns "N/A".
 if __name__ == "__main__":
     from parser import parse_xml
 
@@ -100,6 +77,7 @@ if __name__ == "__main__":
     print(f"  Speedup          : {results['speedup_factor']}×  faster with dict")
     print("=" * 50)
 
+# verifies if its correct
     txn_linear = linear_search(txns, 10)
     idx = build_index(txns)
     txn_dict = dict_lookup(idx, 10)

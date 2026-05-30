@@ -1,21 +1,10 @@
 """
-server.py — MoMo SMS REST API
-Plain Python http.server implementation.
+server.py  MoMo SMS REST API
 
-Endpoints:
-  GET    /transactions          List all transactions (paginated)
-  GET    /transactions/{id}     Get single transaction
-  POST   /transactions          Create new transaction
-  PUT    /transactions/{id}     Update existing transaction
-  DELETE /transactions/{id}     Delete a transaction
-  GET    /transactions/search?q=...  Search by party/type/id
-  GET    /dsa/benchmark         Run DSA benchmark and return results
-
-Authentication: HTTP Basic Auth
+Authentication: 
   Username: admin
   Password: momo2024
 
-Run: python server.py [port]   (default port 8080)
 """
 
 import base64
@@ -29,8 +18,9 @@ from urllib.parse import urlparse, parse_qs
 from parser import parse_xml
 from dsa import build_index, linear_search, dict_lookup, benchmark
 
+# loads transactions into memory. index is a hash map for O(1) lookups by ID
 
-XML_FILE = "modified_sms_v2.xml"
+XML_FILE = "modified_sms_v2.xml"  
 _transactions: list[dict] = parse_xml(XML_FILE)
 _index: dict[int, dict] = build_index(_transactions)
 _next_id: int = max((t["id"] for t in _transactions), default=0) + 1
@@ -40,11 +30,12 @@ def _refresh_index():
     global _index
     _index = build_index(_transactions)
 
+# endpoint is protected by HTTP basic authentication.
 VALID_CREDENTIALS = {
     "admin": "momo2024",
 }
 
-
+# checks the Authorization header for valid credentials.
 def _check_auth(handler) -> bool:
     """Return True if the request carries valid Basic Auth credentials."""
     auth_header = handler.headers.get("Authorization", "")
@@ -57,8 +48,7 @@ def _check_auth(handler) -> bool:
     except Exception:
         return False
 
-
-
+# helper to send JSON responses
 
 def _send_json(handler, status: int, payload):
     body = json.dumps(payload, indent=2).encode("utf-8")
@@ -90,7 +80,6 @@ class MoMoHandler(BaseHTTPRequestHandler):
         """Override to add timestamp to logs."""
         print(f"[{time.strftime('%H:%M:%S')}] {self.address_string()} - {format % args}")
 
-
     def _require_auth(self) -> bool:
         """Returns True if authenticated, otherwise sends 401 and returns False."""
         if _check_auth(self):
@@ -98,6 +87,7 @@ class MoMoHandler(BaseHTTPRequestHandler):
         _send_401(self)
         return False
 
+# The main request handler methods (do_GET, do_POST, do_PUT, do_DELETE) will go here.
 
     def do_GET(self):
         if not self._require_auth():
@@ -127,7 +117,7 @@ class MoMoHandler(BaseHTTPRequestHandler):
             })
             return
 
-  
+  # allows searching transactions by party, type, or transaction ID using a query parameter 'q'.  
         if path == "/transactions/search":
             q = params.get("q", [""])[0].lower()
             results = [
@@ -140,7 +130,7 @@ class MoMoHandler(BaseHTTPRequestHandler):
             _send_json(self, 200, {"query": q, "results": results, "count": len(results)})
             return
 
-
+  # provides a benchmark endpoint to compare linear search vs dictionary lookup.
         if path == "/dsa/benchmark":
             results = benchmark(_transactions, iterations=50_000)
             results["note"] = (
@@ -151,7 +141,7 @@ class MoMoHandler(BaseHTTPRequestHandler):
             _send_json(self, 200, results)
             return
 
-
+     # allows fetching a single transaction by ID.
         m = re.fullmatch(r"/transactions/(\d+)", path)
         if m:
             tid = int(m.group(1))
@@ -164,7 +154,7 @@ class MoMoHandler(BaseHTTPRequestHandler):
 
         _send_json(self, 404, {"error": "Endpoint not found."})
 
-
+# allows creating a new transaction. Expects JSON body with required fields: amount, transaction_type, party.
     def do_POST(self):
         if not self._require_auth():
             return
@@ -182,8 +172,7 @@ class MoMoHandler(BaseHTTPRequestHandler):
         except json.JSONDecodeError:
             _send_json(self, 400, {"error": "Invalid JSON body."})
             return
-
-
+# Validate required fields
         required = ["amount", "transaction_type", "party"]
         missing = [f for f in required if f not in body]
         if missing:
@@ -209,11 +198,7 @@ class MoMoHandler(BaseHTTPRequestHandler):
         _refresh_index()
         _send_json(self, 201, new_txn)
 
-
-    def do_PUT(self):
-        if not self._require_auth():
-            return
-
+#allows updating an existing transaction by ID.
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/")
         m = re.fullmatch(r"/transactions/(\d+)", path)
@@ -234,12 +219,13 @@ class MoMoHandler(BaseHTTPRequestHandler):
             _send_json(self, 400, {"error": "Invalid JSON body."})
             return
 
+    
         updates.pop("id", None)
         txn.update(updates)
         _refresh_index()
         _send_json(self, 200, txn)
 
-
+# allows deleting a transaction by ID
     def do_DELETE(self):
         if not self._require_auth():
             return
@@ -261,7 +247,7 @@ class MoMoHandler(BaseHTTPRequestHandler):
         _refresh_index()
         _send_json(self, 200, {"message": f"Transaction {tid} deleted successfully."})
 
-
+# The server entry point
 
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
