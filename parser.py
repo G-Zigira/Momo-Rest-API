@@ -75,7 +75,7 @@ def _extract_party(body: str) -> str:
    
     if "airtime" in body.lower():
         return "Airtime"
-    return "N/A"
+    return ""
 
 # looks for a phrase such as "Transaction ID:" followed by an identifier.
 def _extract_transaction_id(body: str) -> str:
@@ -88,7 +88,7 @@ def _extract_transaction_id(body: str) -> str:
     m = re.search(r"Financial Transaction Id:\s*(\d+)", body)
     if m:
         return m.group(1)
-    return "N/A"
+    return ""
 
 # Its the function that ties everything together
 def parse_xml(filepath: str) -> list[dict]:

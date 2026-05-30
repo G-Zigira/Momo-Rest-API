@@ -5,6 +5,9 @@ Authentication:
   Username: admin
   Password: momo2024
 
+Role-based access:
+  admin -> GET, POST, PUT, DELETE
+  user  -> GET, POST only
 """
 
 import base64
@@ -18,7 +21,18 @@ from urllib.parse import urlparse, parse_qs
 from parser import parse_xml
 from dsa import build_index, linear_search, dict_lookup, benchmark
 
+<<<<<<< HEAD
 # loads transactions into memory. index is a hash map for O(1) lookups by ID
+=======
+users = {
+    "user1": "1abcd",
+    "user2": "zyxwv"
+}
+
+admin_user = {
+    "admin": "momo2024"
+}
+>>>>>>> 08156955cb12a4cf48d3e0f94df837a5001c50c6
 
 XML_FILE = "modified_sms_v2.xml"  
 _transactions: list[dict] = parse_xml(XML_FILE)
@@ -32,21 +46,35 @@ def _refresh_index():
 
 # endpoint is protected by HTTP basic authentication.
 VALID_CREDENTIALS = {
-    "admin": "momo2024",
+    **users,
+    **admin_user
 }
 
+<<<<<<< HEAD
 # checks the Authorization header for valid credentials.
 def _check_auth(handler) -> bool:
     """Return True if the request carries valid Basic Auth credentials."""
+=======
+
+def _get_role(handler) -> str | None:
+    """
+    Decode Basic Auth and return the caller's role.
+    Returns 'admin', 'user', or None if credentials are missing/invalid.
+    """
+>>>>>>> 08156955cb12a4cf48d3e0f94df837a5001c50c6
     auth_header = handler.headers.get("Authorization", "")
     if not auth_header.startswith("Basic "):
-        return False
+        return None
     try:
         decoded = base64.b64decode(auth_header[6:]).decode("utf-8")
         username, password = decoded.split(":", 1)
-        return VALID_CREDENTIALS.get(username) == password
+        if VALID_CREDENTIALS.get(username) != password:
+            return None
+        if username in admin_user:
+            return "admin"
+        return "user"
     except Exception:
-        return False
+        return None
 
 # helper to send JSON responses
 
@@ -67,6 +95,13 @@ def _send_401(handler):
     handler.wfile.write(json.dumps({"error": "Unauthorized. Provide valid Basic Auth credentials."}).encode())
 
 
+def _send_403(handler):
+    handler.send_response(403)
+    handler.send_header("Content-Type", "application/json")
+    handler.end_headers()
+    handler.wfile.write(json.dumps({"error": "Forbidden. Admin privileges required for this action."}).encode())
+
+
 def _parse_id(segment: str) -> int | None:
     try:
         return int(segment)
@@ -80,17 +115,30 @@ class MoMoHandler(BaseHTTPRequestHandler):
         """Override to add timestamp to logs."""
         print(f"[{time.strftime('%H:%M:%S')}] {self.address_string()} - {format % args}")
 
+<<<<<<< HEAD
     def _require_auth(self) -> bool:
         """Returns True if authenticated, otherwise sends 401 and returns False."""
         if _check_auth(self):
             return True
         _send_401(self)
         return False
+=======
+    def _get_authenticated_role(self) -> str | None:
+        """
+        Validates credentials and returns the role ('admin' or 'user').
+        Sends 401 automatically if unauthenticated, returns None in that case.
+        """
+        role = _get_role(self)
+        if role is None:
+            _send_401(self)
+        return role
+>>>>>>> 08156955cb12a4cf48d3e0f94df837a5001c50c6
 
 # The main request handler methods
 
     def do_GET(self):
-        if not self._require_auth():
+        role = self._get_authenticated_role()
+        if role is None:
             return
 
         parsed = urlparse(self.path)
@@ -117,7 +165,11 @@ class MoMoHandler(BaseHTTPRequestHandler):
             })
             return
 
+<<<<<<< HEAD
   # allows searching transactions by party, type, or transaction ID using a query parameter 'q'.  
+=======
+        # GET /transactions/search
+>>>>>>> 08156955cb12a4cf48d3e0f94df837a5001c50c6
         if path == "/transactions/search":
             q = params.get("q", [""])[0].lower()
             results = [
@@ -154,9 +206,13 @@ class MoMoHandler(BaseHTTPRequestHandler):
 
         _send_json(self, 404, {"error": "Endpoint not found."})
 
+<<<<<<< HEAD
 # allows creating a new transaction. Expects JSON body with required fields: amount, transaction_type, party.
+=======
+>>>>>>> 08156955cb12a4cf48d3e0f94df837a5001c50c6
     def do_POST(self):
-        if not self._require_auth():
+        role = self._get_authenticated_role()
+        if role is None:
             return
 
         parsed = urlparse(self.path)
@@ -172,7 +228,11 @@ class MoMoHandler(BaseHTTPRequestHandler):
         except json.JSONDecodeError:
             _send_json(self, 400, {"error": "Invalid JSON body."})
             return
+<<<<<<< HEAD
 # Validate required fields
+=======
+
+>>>>>>> 08156955cb12a4cf48d3e0f94df837a5001c50c6
         required = ["amount", "transaction_type", "party"]
         missing = [f for f in required if f not in body]
         if missing:
@@ -198,7 +258,20 @@ class MoMoHandler(BaseHTTPRequestHandler):
         _refresh_index()
         _send_json(self, 201, new_txn)
 
+<<<<<<< HEAD
 #allows updating an existing transaction by ID.
+=======
+    def do_PUT(self):
+        role = self._get_authenticated_role()
+        if role is None:
+            return
+
+        # Only admins may update transactions
+        if role != "admin":
+            _send_403(self)
+            return
+
+>>>>>>> 08156955cb12a4cf48d3e0f94df837a5001c50c6
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/")
         m = re.fullmatch(r"/transactions/(\d+)", path)
@@ -219,15 +292,27 @@ class MoMoHandler(BaseHTTPRequestHandler):
             _send_json(self, 400, {"error": "Invalid JSON body."})
             return
 
+<<<<<<< HEAD
     
+=======
+>>>>>>> 08156955cb12a4cf48d3e0f94df837a5001c50c6
         updates.pop("id", None)
         txn.update(updates)
         _refresh_index()
         _send_json(self, 200, txn)
 
+<<<<<<< HEAD
 # allows deleting a transaction by ID
+=======
+>>>>>>> 08156955cb12a4cf48d3e0f94df837a5001c50c6
     def do_DELETE(self):
-        if not self._require_auth():
+        role = self._get_authenticated_role()
+        if role is None:
+            return
+
+        # Only admins may delete transactions
+        if role != "admin":
+            _send_403(self)
             return
 
         parsed = urlparse(self.path)
@@ -247,14 +332,19 @@ class MoMoHandler(BaseHTTPRequestHandler):
         _refresh_index()
         _send_json(self, 200, {"message": f"Transaction {tid} deleted successfully."})
 
+<<<<<<< HEAD
 # The server entry point
+=======
+>>>>>>> 08156955cb12a4cf48d3e0f94df837a5001c50c6
 
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
     server = HTTPServer(("0.0.0.0", port), MoMoHandler)
     print(f"MoMo API running on http://localhost:{port}")
     print(f"Loaded {len(_transactions)} transactions.")
-    print("Auth  : admin / momo2024")
+    print("Auth  : admin / momo2024  (full access)")
+    print("Auth  : user1 / 1abcd     (GET + POST only)")
+    print("Auth  : user2 / zyxwv     (GET + POST only)")
     print("Press Ctrl+C to stop.\n")
     try:
         server.serve_forever()
