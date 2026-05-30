@@ -21,6 +21,9 @@ from urllib.parse import urlparse, parse_qs
 from parser import parse_xml
 from dsa import build_index, linear_search, dict_lookup, benchmark
 
+<<<<<<< HEAD
+# loads transactions into memory. index is a hash map for O(1) lookups by ID
+=======
 users = {
     "user1": "1abcd",
     "user2": "zyxwv"
@@ -29,9 +32,9 @@ users = {
 admin_user = {
     "admin": "momo2024"
 }
+>>>>>>> 08156955cb12a4cf48d3e0f94df837a5001c50c6
 
-
-XML_FILE = "modified_sms_v2.xml"  # place this file in same folder
+XML_FILE = "modified_sms_v2.xml"  
 _transactions: list[dict] = parse_xml(XML_FILE)
 _index: dict[int, dict] = build_index(_transactions)
 _next_id: int = max((t["id"] for t in _transactions), default=0) + 1
@@ -41,18 +44,24 @@ def _refresh_index():
     global _index
     _index = build_index(_transactions)
 
-
+# endpoint is protected by HTTP basic authentication.
 VALID_CREDENTIALS = {
     **users,
     **admin_user
 }
 
+<<<<<<< HEAD
+# checks the Authorization header for valid credentials.
+def _check_auth(handler) -> bool:
+    """Return True if the request carries valid Basic Auth credentials."""
+=======
 
 def _get_role(handler) -> str | None:
     """
     Decode Basic Auth and return the caller's role.
     Returns 'admin', 'user', or None if credentials are missing/invalid.
     """
+>>>>>>> 08156955cb12a4cf48d3e0f94df837a5001c50c6
     auth_header = handler.headers.get("Authorization", "")
     if not auth_header.startswith("Basic "):
         return None
@@ -67,6 +76,7 @@ def _get_role(handler) -> str | None:
     except Exception:
         return None
 
+# helper to send JSON responses
 
 def _send_json(handler, status: int, payload):
     body = json.dumps(payload, indent=2).encode("utf-8")
@@ -105,6 +115,14 @@ class MoMoHandler(BaseHTTPRequestHandler):
         """Override to add timestamp to logs."""
         print(f"[{time.strftime('%H:%M:%S')}] {self.address_string()} - {format % args}")
 
+<<<<<<< HEAD
+    def _require_auth(self) -> bool:
+        """Returns True if authenticated, otherwise sends 401 and returns False."""
+        if _check_auth(self):
+            return True
+        _send_401(self)
+        return False
+=======
     def _get_authenticated_role(self) -> str | None:
         """
         Validates credentials and returns the role ('admin' or 'user').
@@ -114,6 +132,9 @@ class MoMoHandler(BaseHTTPRequestHandler):
         if role is None:
             _send_401(self)
         return role
+>>>>>>> 08156955cb12a4cf48d3e0f94df837a5001c50c6
+
+# The main request handler methods
 
     def do_GET(self):
         role = self._get_authenticated_role()
@@ -124,7 +145,6 @@ class MoMoHandler(BaseHTTPRequestHandler):
         path = parsed.path.rstrip("/")
         params = parse_qs(parsed.query)
 
-        # GET /transactions
         if path == "/transactions":
             page = int(params.get("page", [1])[0])
             limit = int(params.get("limit", [20])[0])
@@ -145,7 +165,11 @@ class MoMoHandler(BaseHTTPRequestHandler):
             })
             return
 
+<<<<<<< HEAD
+  # allows searching transactions by party, type, or transaction ID using a query parameter 'q'.  
+=======
         # GET /transactions/search
+>>>>>>> 08156955cb12a4cf48d3e0f94df837a5001c50c6
         if path == "/transactions/search":
             q = params.get("q", [""])[0].lower()
             results = [
@@ -158,6 +182,7 @@ class MoMoHandler(BaseHTTPRequestHandler):
             _send_json(self, 200, {"query": q, "results": results, "count": len(results)})
             return
 
+  # provides a benchmark endpoint to compare linear search vs dictionary lookup.
         if path == "/dsa/benchmark":
             results = benchmark(_transactions, iterations=50_000)
             results["note"] = (
@@ -168,6 +193,7 @@ class MoMoHandler(BaseHTTPRequestHandler):
             _send_json(self, 200, results)
             return
 
+     # allows fetching a single transaction by ID.
         m = re.fullmatch(r"/transactions/(\d+)", path)
         if m:
             tid = int(m.group(1))
@@ -180,6 +206,10 @@ class MoMoHandler(BaseHTTPRequestHandler):
 
         _send_json(self, 404, {"error": "Endpoint not found."})
 
+<<<<<<< HEAD
+# allows creating a new transaction. Expects JSON body with required fields: amount, transaction_type, party.
+=======
+>>>>>>> 08156955cb12a4cf48d3e0f94df837a5001c50c6
     def do_POST(self):
         role = self._get_authenticated_role()
         if role is None:
@@ -198,7 +228,11 @@ class MoMoHandler(BaseHTTPRequestHandler):
         except json.JSONDecodeError:
             _send_json(self, 400, {"error": "Invalid JSON body."})
             return
+<<<<<<< HEAD
+# Validate required fields
+=======
 
+>>>>>>> 08156955cb12a4cf48d3e0f94df837a5001c50c6
         required = ["amount", "transaction_type", "party"]
         missing = [f for f in required if f not in body]
         if missing:
@@ -224,6 +258,9 @@ class MoMoHandler(BaseHTTPRequestHandler):
         _refresh_index()
         _send_json(self, 201, new_txn)
 
+<<<<<<< HEAD
+#allows updating an existing transaction by ID.
+=======
     def do_PUT(self):
         role = self._get_authenticated_role()
         if role is None:
@@ -234,6 +271,7 @@ class MoMoHandler(BaseHTTPRequestHandler):
             _send_403(self)
             return
 
+>>>>>>> 08156955cb12a4cf48d3e0f94df837a5001c50c6
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/")
         m = re.fullmatch(r"/transactions/(\d+)", path)
@@ -254,11 +292,19 @@ class MoMoHandler(BaseHTTPRequestHandler):
             _send_json(self, 400, {"error": "Invalid JSON body."})
             return
 
+<<<<<<< HEAD
+    
+=======
+>>>>>>> 08156955cb12a4cf48d3e0f94df837a5001c50c6
         updates.pop("id", None)
         txn.update(updates)
         _refresh_index()
         _send_json(self, 200, txn)
 
+<<<<<<< HEAD
+# allows deleting a transaction by ID
+=======
+>>>>>>> 08156955cb12a4cf48d3e0f94df837a5001c50c6
     def do_DELETE(self):
         role = self._get_authenticated_role()
         if role is None:
@@ -286,6 +332,10 @@ class MoMoHandler(BaseHTTPRequestHandler):
         _refresh_index()
         _send_json(self, 200, {"message": f"Transaction {tid} deleted successfully."})
 
+<<<<<<< HEAD
+# The server entry point
+=======
+>>>>>>> 08156955cb12a4cf48d3e0f94df837a5001c50c6
 
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8080

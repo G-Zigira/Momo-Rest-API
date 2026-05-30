@@ -7,7 +7,7 @@ import xml.etree.ElementTree as ET
 import re
 import json
 
-
+# takes SMS body and classsifies it into categories.
 def _detect_type(body: str) -> str:
    
     b = body.lower()
@@ -29,7 +29,7 @@ def _detect_type(body: str) -> str:
         return "cash_out"
     return "other"
 
-
+# Uses regex to find the first occurence of an amount.
 def _extract_amount(body: str) -> float:
     
     match = re.search(r"([\d,]+)\s*RWF", body)
@@ -37,7 +37,7 @@ def _extract_amount(body: str) -> float:
         return float(match.group(1).replace(",", ""))
     return 0.0
 
-
+# Extracts fee amount from body, with 0 as a default when nothing is found,
 def _extract_fee(body: str) -> float:
    
     m = re.search(r"[Ff]ee was:?\s*([\d,]+)\s*RWF", body)
@@ -46,6 +46,7 @@ def _extract_fee(body: str) -> float:
     return 0.0
 
 
+# looks for a phrase such as "balance"  which is followed by a number and "RWF"
 def _extract_balance(body: str) -> float:
     
     m = re.search(r"[Nn]ew\s+[Bb]alance\s*:?\s*([\d,]+)\s*RWF", body)
@@ -53,7 +54,7 @@ def _extract_balance(body: str) -> float:
         return float(m.group(1).replace(",", ""))
     return 0.0
 
-
+# tries to find who the transaction was with.
 def _extract_party(body: str) -> str:
   
     m = re.search(r"transferred to\s+([A-Za-z][\w\s]+?)\s*\((\d+)\)", body)
@@ -76,7 +77,7 @@ def _extract_party(body: str) -> str:
         return "Airtime"
     return ""
 
-
+# looks for a phrase such as "Transaction ID:" followed by an identifier.
 def _extract_transaction_id(body: str) -> str:
     """Extract transaction/financial ID."""
     
@@ -89,7 +90,7 @@ def _extract_transaction_id(body: str) -> str:
         return m.group(1)
     return ""
 
-
+# Its the function that ties everything together
 def parse_xml(filepath: str) -> list[dict]:
    
     tree = ET.parse(filepath)
@@ -114,7 +115,7 @@ def parse_xml(filepath: str) -> list[dict]:
 
     return transactions
 
-
+# it calls the parse_xml function 
 if __name__ == "__main__":
     txns = parse_xml("modified_sms_v2.xml")
     print(f"Parsed {len(txns)} transactions.\n")
