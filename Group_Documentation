@@ -1,14 +1,15 @@
-Laura Keza -Authentication vs Authorization — 
+1: Laura Keza -Authentication vs Authorization — 
+
 boolean check had to become a role-aware function
 Wrong status codes — 401 vs 403 distinction
 Hardcoded plain-text passwords — security risk, needs bcrypt + env vars
 No logout mechanism — Basic Auth caches credentials, JWT would fix this
 
-Ineza Henry Jay-z 
-1. we implemented two search methods (linear search and dictionary lookup) to compare their efficiency when finding a transaction by ID.
+2: Ineza Henry Jay-z  - Data Structures & Algorithms (DSA Integration)
+
+
+1. implemented two search methods (linear search and dictionary lookup) to compare their efficiency when finding a transaction by ID.
 2. Used benchmark to compare the search methods over a large data set.
-
-
 4. Reflection — answer these two questions the assignment asks:
 
 Why is dictionary lookup faster? -->> It uses a hash table, O(1) vs O(n)
@@ -16,3 +17,82 @@ Suggest another data structure -->> binary search, O(logn) still better than lin
 5. One screenshot of the terminal output when dsa.py is run successfully including the correctness check at the bottom.
 "screenshot attached"
 ![alt text](image.png)
+
+3 :Denzel Ngabo - Testing & Validation
+
+
+Added a comprehensive pytest test suite covering all core modules 
+of the MoMo REST API.
+
+Tests Added
+- test_server.py — unit tests for authentication (_get_role) and ID parsing (_parse_id)
+- test_parser.py — unit tests for SMS parsing functions
+- test_dsa.py — unit tests for linear search, dict lookup, build index and benchmark
+- test_endpoints.py — integration tests for all HTTP endpoints (GET, POST, PUT, DELETE)
+
+What's Covered
+- Role-based authentication (admin vs user vs unauthenticated)
+- CRUD operations on /transactions
+- 403 Forbidden for user attempting PUT/DELETE
+- 404 for invalid transaction IDs
+- 422 for missing required fields on POST
+
+How to Run
+pytest tests/ -v
+
+Results
+60 tests passing
+
+4 Collins Gathungu
+Did the API documentation.
+
+5: Lucas Guivera - Data Parsing, API Implementation (CRUD Endpoints)
+
+1. Data Parsing
+
+The goal of this component was to extract transaction data from the modified_sms_v2.xml file and convert it into a structured format that can be used by the API.
+
+Key tasks completed:
+
+Parsed the XML file using Python's xml.etree.ElementTree.
+Read each SMS record and extracted relevant transaction information.
+Classified SMS messages into transaction types such as incoming transfers, outgoing transfers, payments, airtime purchases, bank deposits, cash withdrawals, and reversals.
+Used regular expressions to extract important fields including:
+Transaction amount
+Transaction fee
+Account balance
+Sender/receiver information
+Transaction ID
+Converted each SMS into a JSON-compatible dictionary.
+Stored all records as a list of transaction objects that can be consumed by the REST API.
+
+2. REST API Implementation (CRUD Endpoints)
+
+The goal of this component was to expose the parsed transaction data through a REST API built using Python's http.server module.
+
+Key features implemented:
+
+Create (POST)
+POST /transactions
+Allows users to create a new transaction record.
+Validates required fields before insertion.
+Generates a unique transaction ID.
+Returns the newly created transaction with HTTP 201 Created.
+Read (GET)
+GET /transactions
+Retrieves all transaction records.
+Supports pagination and filtering by transaction type.
+GET /transactions/{id}
+Retrieves a specific transaction using its ID.
+Returns HTTP 404 if the transaction does not exist.
+Update (PUT)
+PUT /transactions/{id}
+Updates an existing transaction.
+Accepts JSON data containing the fields to be modified.
+Returns the updated transaction.
+Returns HTTP 404 if the record cannot be found.
+Delete (DELETE)
+DELETE /transactions/{id}
+Removes a transaction from the dataset.
+Returns a success message when deletion is completed.
+Returns HTTP 404 if the transaction does not exist.
