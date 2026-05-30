@@ -1,5 +1,5 @@
 Members 
-  Collins Gathungu
+  Collins Gathungu 
   Guivera Zigira
   Ineza Henry Jay-z
   Denzel Ngabo
